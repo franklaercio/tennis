@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const winnerPoints = 4
+
 var waitGroup sync.WaitGroup
 
 // This function (main) it's the play tennis game
@@ -15,6 +17,8 @@ var waitGroup sync.WaitGroup
 // This function end when match is over
 // The match is over when one play won a game
 func main() {
+	fmt.Println("<-------Starting the match!------->")
+
 	var playerOne, playerTwo string
 
 	fmt.Print("Input player name one: ")
@@ -100,10 +104,10 @@ func playerWinner(score map[string]int, playerOne string, playerTwo string) stri
 
 // This function determines who won the match up to the fourth point.
 func winnerInTime(scoreOne int, scoreTwo int) bool {
-	return (scoreOne == 4) && (scoreTwo == 0 || scoreOne-scoreTwo > 2 || scoreOne-scoreTwo == 2)
+	return (scoreOne == winnerPoints) && (scoreTwo == 0 || scoreOne-scoreTwo > 2 || scoreOne-scoreTwo == 2)
 }
 
 // This function determines who wins after a 3-3 tie.
 func winnerInDeuce(scoreOne int, scoreTwo int) bool {
-	return (scoreOne > 4) && (scoreOne-scoreTwo == 2)
+	return (scoreOne > winnerPoints) && (scoreOne-scoreTwo == 2)
 }
