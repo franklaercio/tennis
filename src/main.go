@@ -2,36 +2,55 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"sync"
 	"time"
 )
 
-const p1 = "Frank"
-const p2 = "Ohanna"
-
 var waitGroup sync.WaitGroup
 
-/*
-1 - Um game é uma partida que ganha o adversário que marcar pelo menos 4 pontos no total e 2 a mais que o adversário
-2 - Um set é um conjunto de jogos, vencendo o jogador que ganhar pelo menos 6 jogos e dois a mais que o adversário
-3 - Uma partida (match) é uma sequência de sets que ganha 3 de 5 sets
+// This function (main) it's the play tennis game
+// You need to pass a player one and player two names
+// This function end when match is over
+// The match is over when one play won a game
+func main() {
+	var playerOne, playerTwo string
 
-Simplicidade: Um match possui apenas um único set, composto de um único game, ganhando o jogador que fizer um número P de pontos
-*/
-func playTennis(p1 string, p2 string) {
+	fmt.Print("Input player name one: ")
+	_, err1 := fmt.Scanln(&playerOne)
+
+	fmt.Print("Input player name two: ")
+	_, err2 := fmt.Scanln(&playerTwo)
+
+	if err1 != nil || len(playerOne) == 0 {
+		log.Fatal("Unable to read player name one!")
+	} else if err2 != nil || len(playerTwo) == 0 {
+		log.Fatal("Unable to read player name two!")
+	}
+
+	waitGroup.Add(1)
+
+	go playTennis(playerOne, playerTwo)
+	waitGroup.Wait()
+}
+
+// This function simulates a tennis match.
+// The match starts with the players with the score of 0 to 0.
+// If the player fails to throw the ball back, a point is scored.
+func playTennis(playerOne string, playerTwo string) {
 	var score = make(map[string]int)
-	score[p1] = 0
-	score[p2] = 0
+	score[playerOne] = 0
+	score[playerTwo] = 0
 
 	ball := make(chan bool)
-	playerKicking := p1
+	playerKicking := playerOne
 
 	for true {
-		playerWinner := winner(score, p1, p2)
+		winner := playerWinner(score, playerOne, playerTwo)
 
-		if len(playerWinner) > 0 {
-			fmt.Println("The winner is", playerWinner,"!!!")
+		if len(winner) > 0 {
+			fmt.Println("The winner is", winner, "!!!")
 			break
 		}
 
@@ -42,40 +61,49 @@ func playTennis(p1 string, p2 string) {
 		if !playAgain {
 			score[playerKicking] += 1
 		} else {
-			if playerKicking == p1 {
-				playerKicking = p2
+			if playerKicking == playerOne {
+				playerKicking = playerTwo
 			} else {
-				playerKicking = p1
+				playerKicking = playerOne
 			}
 		}
 
-		fmt.Println("Score", p1, score[p1], "and", p2, score[p2])
+		fmt.Println("Score", playerOne, score[playerOne], "and", playerTwo, score[playerTwo])
 	}
 
 	waitGroup.Done()
 }
 
+// This function simulate a kickback the ball
 func kickBack(ball chan bool) {
 	rand.Seed(time.Now().UnixNano())
 	ball <- rand.Intn(2) == 1
 }
 
-func winner(score map[string]int, p1 string, p2 string) string {
-	if score[p1] == 4 && (score[p2] == 0 || score[p1]-score[p2] > 2 || score[p1]-score[p2] == 2) {
-		return p1
-	} else if score[p1] > 4 && score[p1]-score[p2] == 2 {
-		return p1
-	} else if score[p2] == 4 && (score[p1] == 0 || score[p2]-score[p1] > 2 || score[p1]-score[p2] == 2)  {
-		return p2
-	} else if score[p2] > 4 && score[p2]-score[p1] == 2 {
-		return p2
-	} else {
-		return ""
+// This function determines who won the match.
+func playerWinner(score map[string]int, playerOne string, playerTwo string) string {
+	scorePlayerOne := score[playerOne]
+	scorePlayerTwo := score[playerTwo]
+
+	if winnerInTime(scorePlayerOne, scorePlayerTwo) {
+		return playerOne
+	} else if winnerInDeuce(scorePlayerOne, scorePlayerTwo) {
+		return playerOne
+	} else if winnerInTime(scorePlayerTwo, scorePlayerOne) {
+		return playerTwo
+	} else if winnerInDeuce(scorePlayerTwo, scorePlayerOne) {
+		return playerTwo
 	}
+
+	return ""
 }
 
-func main() {
-	waitGroup.Add(1)
-	go playTennis(p1, p2)
-	waitGroup.Wait()
+// This function determines who won the match up to the fourth point.
+func winnerInTime(scoreOne int, scoreTwo int) bool {
+	return (scoreOne == 4) && (scoreTwo == 0 || scoreOne-scoreTwo > 2 || scoreOne-scoreTwo == 2)
+}
+
+// This function determines who wins after a 3-3 tie.
+func winnerInDeuce(scoreOne int, scoreTwo int) bool {
+	return (scoreOne > 4) && (scoreOne-scoreTwo == 2)
 }
